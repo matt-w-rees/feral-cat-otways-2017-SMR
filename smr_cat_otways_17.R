@@ -19,10 +19,10 @@ library(secr)
 
 
 # LOAD CAPTURE HISTORIES AND TRAPFILE 
-trapfile <- "trap.txt"                                     # trap coordinates and usage
-captfile <- "capt.txt"                                     # identified, marked cats
-tu <- as.matrix(read.csv("unmarked_dethist.csv")[, -1])    # unmarked cats
-tn <- as.matrix(read.csv("unknown_dethist.csv")[, -1])     # marked status unknown (blurry tabby cats)
+trapfile <- "data/trap.txt"                                     # trap coordinates and usage
+captfile <- "data/capt.txt"                                     # identified, marked cats
+tu <- as.matrix(read.csv("data/unmarked_dethist.csv")[, -1])    # unmarked cats
+tn <- as.matrix(read.csv("data/unknown_dethist.csv")[, -1])     # marked status unknown (blurry tabby cats)
 
 
 ## MAKE CAPTHIST FILE 
