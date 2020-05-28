@@ -2,7 +2,7 @@
 #                                                                              #
 #                                 SMR analysis                                 #
 #                       Feral cats - Otway Ranges - 2017                       #
-#   Updated script - new secr version / fixed tn error / grids as sessions     #
+#   updated script - new secr version / fixed tn error / grids as sessions     #
 #                                 Matthew Rees                                 #
 #                                   23/5/2020                                  #
 #                                                                              #
@@ -14,7 +14,7 @@
 # we used camera-traps and natural coat markings to identify cats
 # this is not the exact code used for https://doi.org/10.1016/j.biocon.2019.108287, but an updated script with the following changes:
 # 1) blurry tabby cats correctly placed as tn - mark status unknown (thanks to Joanne Potts for picking this error up)
-# 2) camera-trap grids seperated by being different sessions, rather than using a habitat mask with covariate
+# 2) camera-trap grids seperated by being different sessions, rather than using a habitat mask with covariate (a more efficient approach)
 # 3) "fastproximity = FALSE" arguement in models with time covariates as well as models which are being compared to time covariates (necessary due to change in default settings in the new secr package) 
 # NOTE: these changes have no effect on the results - all results presented in Rees et al. 2019 are correct. 
 
@@ -30,7 +30,8 @@ library(secr)
 load("workspace.RData")
 
 # note 1: to reduce temporal autocorrelation: all individuals / mark types detections have been reduced to a binary 0-1 per camera-trap per [24-hour] occasion. 
-# note 2: in the previous version of this script tn cats were incorrectly put as tm - this did effect the results because pID was fixed to 1 (excluding these cats from the models - as they should be). It is very unlikely to have have tn individuals using natural marks.
+# note 2: in the previous version of this script tn cats were incorrectly put as tm - this did NOT effect the results because pID was fixed to 1 (excluding these cats from the models - as they should be).
+# note 3: mark status unknown detections are usually included in the model as unmarked detections. Given the context of this study--underestimating cat density is the conservative route--we have kept these detections seperate - and left secr to discard these sightings. 
 trapfile <- "data/trap.txt"                                     # trap coordinates and usage
 captfile <- "data/capt.txt"                                     # identified, marked cats. 
 tu <- as.matrix(read.csv("data/unmarked_dethist.csv")[, -1])    # unmarked cats
@@ -42,15 +43,16 @@ tn <- as.matrix(read.csv("data/unknown_dethist.csv")[, -1])     # marked status 
 
 #==============================================================================#
 ## MAKE CAPTHIST FILE 
-# note 1: we use proximity detectors instead of count detectors (a) to reduce temporal autocorrelation (see above note), (b) because we had variable usage and were modelling time-based covariates. Otherwise we would have condensed to 1 occasion and used count detectors. 
+# note 1: we treat camera-traps as proximity detectors instead of count detectors to (a) reduce temporal autocorrelation (see above note 1), (b) because we had variable usage and (c) are modelling time-based covariates. 
 # note 2: this data is currently formatted in one combined session - with 72 occasions overall. This is sighting-only mark-resight so all occasions need to be specified as sighting occasions (0). 
 CH <- read.capthist(captfile = captfile, trapfile = trapfile, detector = "proximity", markocc = rep(0, 72))
 
 # add un unmarked and unknown sightings 
-# note - tn detections are often combined with tu detections, however, in our case it is conservative to underestimate cat density (see Rees et al. 2019)
+# note - again, tn detections are often combined with tu detections, however, in our case it is conservative to underestimate cat density (see Rees et al. 2019)
 MRCH <- addSightings(CH, unmarked = tu, nonID = NULL, uncertain = tn)
 
-# split camera-trap into two sessions to distinguish them (in the previous version of this script - I seperated grids with habitat mask - but this is quicker / simpler)
+# split camera-trap into two sessions to distinguish them 
+# note: in the previous version of this script - I seperated grids with a habitat mask covariate - but this is quicker & simpler
 MRCH2 <- split(MRCH, grepl('T',rownames(traps(MRCH))), bytrap = TRUE)
 # rename sessions
 session(MRCH2) <- c('north',"south")
